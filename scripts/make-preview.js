@@ -1,0 +1,14 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {createProject} from '../server/seed.js';
+const root=new URL('../',import.meta.url);
+const assetNames={'demo-still-life':'still-life','demo-night':'night','demo-together':'together','demo-characters':'characters'};
+const assets={};for(const[key,name]of Object.entries(assetNames))assets[key]='data:image/svg+xml;base64,'+(await readFile(new URL(`public/assets/${name}.svg`,root))).toString('base64');
+let shared=await readFile(new URL('public/shared.js',root),'utf8');
+shared=shared.replace(/^export /gm,'').replace(/const image=id=>[^\n]+;/,`const image=id=>previewAssets[id]||'';`);
+let visitor=await readFile(new URL('public/visitor.js',root),'utf8');visitor=visitor.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'');
+const css=(await readFile(new URL('public/styles.css',root),'utf8')).replace(/^@import[^\n]+\n/,'');
+const data=JSON.stringify(createProject()).replace(/</g,'\\u003c');
+const script=`const previewAssets=${JSON.stringify(assets)};\n${shared}\n${visitor}\nmountVisitor(document.querySelector('#app'),${data},{demo:true});const banner=document.querySelector('.demo-banner');banner.textContent='관람객 화면 미리보기 · 가상 작가와 샘플 작품입니다. 편집기는 서버 실행 후 /app에서 사용할 수 있습니다.';document.querySelector('.visitor-footer a').removeAttribute('href');`;
+const html=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atelier Stories · 관람객 미리보기</title><style>${css}</style></head><body><div id="app"></div><div id="toast" role="status"></div><script type="module">${script}</script></body></html>`;
+await writeFile(new URL('docs/preview.html',root),html);
+console.log('Offline visitor preview generated.');

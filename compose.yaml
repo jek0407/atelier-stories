@@ -1,0 +1,13 @@
+services:
+  atelier:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+    volumes:
+      - atelier-data:/app/data
+    restart: unless-stopped
+volumes:
+  atelier-data:
